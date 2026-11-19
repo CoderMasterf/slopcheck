@@ -1,0 +1,35 @@
+name: slopcheck
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Run unit tests
+        run: python -m unittest discover -s tests -v
+
+      - name: Check this repo
+        run: |
+          python slopcheck.py . --exclude demo --md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Fail on critical findings
+        run: |
+          python slopcheck.py . --exclude demo --json > report.json
+          python - <<'PY'
+          import json, sys
+          data = json.load(open("report.json", encoding="utf-8"))
+          critical = [f for f in data["findings"] if f["severity"] == "critical"]
+          for f in critical:
+              print("CRITICAL:", f["title"])
+          sys.exit(1 if critical else 0)
+          PY
