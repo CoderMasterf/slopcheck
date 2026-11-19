@@ -29,7 +29,7 @@ try:
 except Exception:
     pass
 
-VERSION = "0.3.0"
+VERSION = "0.3.1"
 
 SKIP_DIRS = {
     ".git", ".hg", ".svn", "node_modules", "dist", "build", "out",
@@ -189,6 +189,9 @@ def check_secrets(ctx, f):
 
 
 def check_placeholder(ctx, f):
+    # 文档里出现 YOUR_API_KEY 是在解释规则，不是没填
+    if f["ext"] == ".md":
+        return
     for i, ln in enumerate(f["lines"], 1):
         if is_pattern_line(ln) or is_comment_line(ln):
             continue
@@ -227,6 +230,9 @@ def check_silent_except(ctx, f):
 
 def check_debug(ctx, f):
     if f["is_test"] or f["ext"] == ".md":
+        return
+    # CLI 程序的 print 是它的输出界面，不是调试残留
+    if "argparse" in f["text"] or "def main(" in f["text"]:
         return
     n = 0
     first = None
